@@ -252,7 +252,8 @@ export const useSlashCommandProcessor = (
           if (settings.merged.selectedAuthType !== AuthType.USE_OLLAMA) {
             addMessage({
               type: MessageType.ERROR,
-              content: 'Model selection is only available when using Ollama authentication. Use /auth to switch to Ollama first.',
+              content:
+                'Model selection is only available when using Ollama authentication. Use /auth to switch to Ollama first.',
               timestamp: new Date(),
             });
             return;
@@ -1043,6 +1044,7 @@ export const useSlashCommandProcessor = (
     openThemeDialog,
     openAuthDialog,
     openEditorDialog,
+    openModelDialog,
     clearItems,
     performMemoryRefresh,
     showMemoryAction,

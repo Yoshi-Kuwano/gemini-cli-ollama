@@ -22,24 +22,26 @@ With the Gemini CLI you can:
 
 ### Option 1: Local AI with Ollama (Recommended - No API Key Required!)
 
-1. **Prerequisites:** 
+1. **Prerequisites:**
    - Ensure you have [Node.js version 18](https://nodejs.org/en/download) or higher installed
    - Install [Ollama](https://ollama.ai) from https://ollama.ai
 
 2. **Setup Ollama:**
+
    ```bash
    # Install a lightweight, fast model
    ollama pull qwen3:1.7b
-   
+
    # Or try other excellent models
    ollama pull gemma2:2b
    ollama pull phi3:3.8b
-   
+
    # Start Ollama service
    ollama serve
    ```
 
 3. **Run the CLI:**
+
    ```bash
    # Clone this enhanced version
    git clone https://github.com/your-repo/gemini-cli-ollama
@@ -96,7 +98,7 @@ For other authentication methods, including Google Workspace accounts, see the [
 This CLI works with any Ollama model, including:
 
 - **qwen3:1.7b** - Fast, lightweight, excellent for general tasks (default)
-- **gemma2:2b** - Google's Gemma model, great balance of speed and capability  
+- **gemma2:2b** - Google's Gemma model, great balance of speed and capability
 - **phi3:3.8b** - Microsoft's Phi-3 model, strong reasoning capabilities
 - **llama3.2:3b** - Meta's Llama model, well-rounded performance
 - **codellama:7b** - Specialized for code generation and analysis
@@ -107,7 +109,11 @@ This CLI works with any Ollama model, including:
 - `/model` - Switch between installed Ollama models
 - `/auth` - Change authentication method (switch between Ollama/Gemini/Vertex AI)
 
-### Environment Variables
+### Ollama Configuration
+
+You can configure the Ollama host and port in multiple ways:
+
+#### Method 1: Environment Variables
 
 ```bash
 # Optional: Customize Ollama host (default: http://localhost:11434)
@@ -117,12 +123,62 @@ export OLLAMA_HOST=http://localhost:11434
 export OLLAMA_MODEL=gemma2:2b
 ```
 
+#### Method 2: Settings File (Recommended)
+
+Create or modify your settings file to configure Ollama persistently:
+
+**User settings:** `~/.gemini/settings.json`
+**Workspace settings:** `<project>/.gemini/settings.json`
+
+```json
+{
+  "ollamaHost": "http://localhost:11434",
+  "ollamaModel": "qwen3:1.7b"
+}
+```
+
+#### Method 3: Remote Ollama Server
+
+For remote Ollama instances (e.g., different machine, Docker container):
+
+```json
+{
+  "ollamaHost": "http://192.168.1.100:11434",
+  "ollamaModel": "gemma2:2b"
+}
+```
+
+Or with environment variables:
+
+```bash
+export OLLAMA_HOST=http://192.168.1.100:11434
+export OLLAMA_MODEL=gemma2:2b
+```
+
+#### Configuration Priority
+
+The CLI uses this priority order:
+1. **Settings file** (highest priority)
+2. **Environment variables**
+3. **Default values** (http://localhost:11434, qwen3:1.7b)
+
+#### Testing Your Configuration
+
+```bash
+# Test if your Ollama host is accessible
+curl ${OLLAMA_HOST:-http://localhost:11434}/api/tags
+
+# Verify in the CLI
+npm start
+# Use /model command to see available models from your configured host
+```
+
 ### Model Installation Guide
 
 ```bash
 # Install recommended models
 ollama pull qwen3:1.7b      # Lightweight, fast (1.7GB)
-ollama pull gemma2:2b       # Google's efficient model (2GB)  
+ollama pull gemma2:2b       # Google's efficient model (2GB)
 ollama pull phi3:3.8b       # Strong reasoning (3.8GB)
 
 # Code-focused models
@@ -148,13 +204,13 @@ The CLI automatically detects all installed Ollama models via the `/api/tags` en
 ```typescript
 // Add your model to this array
 export const RECOMMENDED_OLLAMA_MODELS = [
-  'qwen3:1.7b',           // Current default
+  'qwen3:1.7b', // Current default
   'gemma2:2b',
-  'llama3.2:3b', 
+  'llama3.2:3b',
   'phi3:3.8b',
   'codellama:7b',
   'mistral:7b',
-  'your-new-model:size',  // ← Add your model here
+  'your-new-model:size', // ← Add your model here
 ] as const;
 ```
 
@@ -199,7 +255,7 @@ Or work with an existing project:
 git clone https://github.com/your-repo/gemini-cli-ollama
 cd gemini-cli-ollama
 npm start
-# Select "Ollama (Local)" authentication  
+# Select "Ollama (Local)" authentication
 > Give me a summary of all of the changes that went in yesterday
 ```
 
@@ -215,7 +271,7 @@ npm start
 ### Local Development Benefits
 
 - ✅ **No API costs** - Run unlimited queries locally
-- ✅ **Privacy first** - Your code never leaves your machine  
+- ✅ **Privacy first** - Your code never leaves your machine
 - ✅ **Offline capable** - Work without internet connection
 - ✅ **Fast response** - Local models respond instantly
 - ✅ **Multiple models** - Switch between different model strengths
@@ -233,6 +289,7 @@ npm start
 #### Ollama Issues
 
 **Ollama not connecting:**
+
 ```bash
 # Check if Ollama is running
 curl http://localhost:11434/api/tags
@@ -245,6 +302,7 @@ ollama list
 ```
 
 **Model not found:**
+
 ```bash
 # Install the default model
 ollama pull qwen3:1.7b
@@ -254,9 +312,10 @@ ollama pull gemma2:2b
 ```
 
 **Permission issues:**
+
 ```bash
 # On macOS/Linux, you might need to allow Ollama in System Preferences
-# Check Ollama logs: 
+# Check Ollama logs:
 ollama logs
 ```
 

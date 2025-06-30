@@ -183,6 +183,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
     openModelDialog,
     closeModelDialog,
     handleModelSelect,
+    getOllamaHost,
   } = useModelCommand(settings, setModelError, config, addItem);
 
   const toggleCorgiMode = useCallback(() => {
@@ -486,7 +487,8 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
     fetchUserMessages();
   }, [history, logger]);
 
-  const isInputActive = streamingState === StreamingState.Idle && !initError && !showModelSelector;
+  const isInputActive =
+    streamingState === StreamingState.Idle && !initError && !showModelSelector;
 
   const handleClearScreen = useCallback(() => {
     clearItems();
@@ -711,7 +713,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
               <OllamaModelSelector
                 onSelect={handleModelSelect}
                 onCancel={closeModelDialog}
-                ollamaHost={process.env.OLLAMA_HOST}
+                ollamaHost={getOllamaHost()}
               />
             </Box>
           ) : showPrivacyNotice ? (

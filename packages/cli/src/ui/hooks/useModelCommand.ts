@@ -16,6 +16,14 @@ export function useModelCommand(
   config: Config | null,
   addItem: UseHistoryManagerReturn['addItem'],
 ) {
+  // Get Ollama host from settings, env, or default
+  const getOllamaHost = useCallback(
+    () =>
+      settings.merged.ollamaHost ||
+      process.env.OLLAMA_HOST ||
+      'http://localhost:11434',
+    [settings.merged.ollamaHost],
+  );
   const [showModelSelector, setShowModelSelector] = useState(false);
 
   const openModelDialog = useCallback(() => {
@@ -39,20 +47,27 @@ export function useModelCommand(
         }
 
         // Add a success message
-        addItem({
-          type: MessageType.INFO,
-          text: `Successfully switched to Ollama model: ${selectedModel}`,
-        }, Date.now());
+        addItem(
+          {
+            type: MessageType.INFO,
+            text: `Successfully switched to Ollama model: ${selectedModel}`,
+          },
+          Date.now(),
+        );
 
         setShowModelSelector(false);
         setModelError(null);
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        const errorMessage =
+          error instanceof Error ? error.message : 'Unknown error';
         setModelError(`Failed to save model selection: ${errorMessage}`);
-        addItem({
-          type: MessageType.ERROR,
-          text: `Failed to switch model: ${errorMessage}`,
-        }, Date.now());
+        addItem(
+          {
+            type: MessageType.ERROR,
+            text: `Failed to switch model: ${errorMessage}`,
+          },
+          Date.now(),
+        );
       }
     },
     [settings, config, addItem, setModelError],
@@ -63,5 +78,6 @@ export function useModelCommand(
     openModelDialog,
     closeModelDialog,
     handleModelSelect,
+    getOllamaHost,
   };
 }

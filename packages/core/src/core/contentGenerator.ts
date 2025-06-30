@@ -55,13 +55,16 @@ export type ContentGeneratorConfig = {
 export async function createContentGeneratorConfig(
   model: string | undefined,
   authType: AuthType | undefined,
-  config?: { getModel?: () => string; getOllamaModel?: () => string },
+  config?: {
+    getModel?: () => string;
+    getOllamaModel?: () => string | undefined;
+    getOllamaHost?: () => string | undefined;
+  },
 ): Promise<ContentGeneratorConfig> {
   const geminiApiKey = process.env.GEMINI_API_KEY;
   const googleApiKey = process.env.GOOGLE_API_KEY;
   const googleCloudProject = process.env.GOOGLE_CLOUD_PROJECT;
   const googleCloudLocation = process.env.GOOGLE_CLOUD_LOCATION;
-  const ollamaHost = process.env.OLLAMA_HOST || 'http://localhost:11434';
 
   // Use runtime model from config if available, otherwise fallback to parameter or default
   const effectiveModel = config?.getModel?.() || model || DEFAULT_GEMINI_MODEL;
@@ -78,11 +81,16 @@ export async function createContentGeneratorConfig(
 
   // Handle Ollama configuration
   if (authType === AuthType.USE_OLLAMA) {
-    contentGeneratorConfig.ollamaHost = ollamaHost;
-    // For Ollama, priority: settings -> env -> default
+    // Priority: settings -> env -> default for host
+    contentGeneratorConfig.ollamaHost =
+      config?.getOllamaHost?.() ||
+      process.env.OLLAMA_HOST ||
+      'http://localhost:11434';
+
+    // Priority: settings -> env -> default for model
     contentGeneratorConfig.model =
-      config?.getOllamaModel?.() || 
-      process.env.OLLAMA_MODEL || 
+      config?.getOllamaModel?.() ||
+      process.env.OLLAMA_MODEL ||
       DEFAULT_OLLAMA_MODEL;
     return contentGeneratorConfig;
   }

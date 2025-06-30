@@ -17,5 +17,5 @@ export const RECOMMENDED_OLLAMA_MODELS = [
   'llama3.2:3b',
   'phi3:3.8b',
   'codellama:7b',
-  'mistral:7b'
+  'mistral:7b',
 ] as const;

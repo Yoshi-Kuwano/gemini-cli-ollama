@@ -39,6 +39,7 @@ export interface Settings {
   theme?: string;
   selectedAuthType?: AuthType;
   ollamaModel?: string;
+  ollamaHost?: string;
   sandbox?: boolean | string;
   coreTools?: string[];
   excludeTools?: string[];

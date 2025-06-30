@@ -38,19 +38,24 @@ export function OllamaModelSelector({
           throw new Error(`Failed to fetch models: ${response.status}`);
         }
         const data = await response.json();
-        const modelOptions: ModelOption[] = data.models.map((model: any) => ({
-          label: `${model.name} (${formatSize(model.size)})`,
-          value: model.name,
-        }));
+        const modelOptions: ModelOption[] = data.models.map(
+          (model: { name: string; size: number }) => ({
+            label: `${model.name} (${formatSize(model.size)})`,
+            value: model.name,
+          }),
+        );
 
         if (modelOptions.length === 0) {
-          setError('No models found. Please install models using "ollama pull <model>"');
+          setError(
+            'No models found. Please install models using "ollama pull <model>"',
+          );
         } else {
           setModels(modelOptions);
         }
-      } catch (err) {
+      } catch (_err) {
         setError(
-          'Could not connect to Ollama. Make sure Ollama is running on ' + ollamaHost
+          'Could not connect to Ollama. Make sure Ollama is running on ' +
+            ollamaHost,
         );
       } finally {
         setLoading(false);
@@ -108,19 +113,13 @@ export function OllamaModelSelector({
           <Text>{error}</Text>
         </Box>
         <Box marginTop={1}>
-          <Text color={Colors.Gray}>
-            Suggested commands:
-          </Text>
+          <Text color={Colors.Gray}>Suggested commands:</Text>
         </Box>
         <Box marginTop={1}>
-          <Text color={Colors.AccentBlue}>
-            ollama pull qwen3:1.7b
-          </Text>
+          <Text color={Colors.AccentBlue}>ollama pull qwen3:1.7b</Text>
         </Box>
         <Box marginTop={1}>
-          <Text color={Colors.AccentBlue}>
-            ollama pull gemma2:2b
-          </Text>
+          <Text color={Colors.AccentBlue}>ollama pull gemma2:2b</Text>
         </Box>
         <Box marginTop={1}>
           <Text color={Colors.Gray}>(Press Escape to cancel)</Text>

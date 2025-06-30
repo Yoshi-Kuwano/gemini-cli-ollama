@@ -132,6 +132,8 @@ export interface ConfigParameters {
   bugCommand?: BugCommandSettings;
   model: string;
   extensionContextFilePaths?: string[];
+  ollamaModel?: string;
+  ollamaHost?: string;
 }
 
 export class Config {
@@ -170,6 +172,8 @@ export class Config {
   private readonly bugCommand: BugCommandSettings | undefined;
   private readonly model: string;
   private readonly extensionContextFilePaths: string[];
+  private readonly ollamaModel: string | undefined;
+  private readonly ollamaHost: string | undefined;
   private modelSwitchedDuringSession: boolean = false;
   flashFallbackHandler?: FlashFallbackHandler;
 
@@ -218,6 +222,8 @@ export class Config {
     this.bugCommand = params.bugCommand;
     this.model = params.model;
     this.extensionContextFilePaths = params.extensionContextFilePaths ?? [];
+    this.ollamaModel = params.ollamaModel;
+    this.ollamaHost = params.ollamaHost;
 
     if (params.contextFileName) {
       setGeminiMdFilename(params.contextFileName);
@@ -450,6 +456,14 @@ export class Config {
 
   getExtensionContextFilePaths(): string[] {
     return this.extensionContextFilePaths;
+  }
+
+  getOllamaModel(): string | undefined {
+    return this.ollamaModel;
+  }
+
+  getOllamaHost(): string | undefined {
+    return this.ollamaHost;
   }
 
   async getGitService(): Promise<GitService> {

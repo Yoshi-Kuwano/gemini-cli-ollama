@@ -10,7 +10,10 @@ import {
   createOllamaContentGenerator,
 } from './ollamaContentGenerator.js';
 import { ContentGeneratorConfig, AuthType } from '../core/contentGenerator.js';
-import { DEFAULT_OLLAMA_MODEL, RECOMMENDED_OLLAMA_MODELS } from '../config/models.js';
+import {
+  DEFAULT_OLLAMA_MODEL,
+  RECOMMENDED_OLLAMA_MODELS,
+} from '../config/models.js';
 
 // Mock fetch globally
 const mockFetch = vi.fn();
@@ -238,8 +241,18 @@ describe('OllamaContentGenerator', () => {
     it('should return installed models when available', async () => {
       const mockResponse = {
         models: [
-          { name: 'gemma2:2b', modified_at: '2023-01-01T00:00:00Z', size: 1000, digest: 'abc123' },
-          { name: 'qwen3:1.7b', modified_at: '2023-01-01T00:00:00Z', size: 2000, digest: 'def456' },
+          {
+            name: 'gemma2:2b',
+            modified_at: '2023-01-01T00:00:00Z',
+            size: 1000,
+            digest: 'abc123',
+          },
+          {
+            name: 'qwen3:1.7b',
+            modified_at: '2023-01-01T00:00:00Z',
+            size: 2000,
+            digest: 'def456',
+          },
         ],
       };
 
@@ -266,8 +279,18 @@ describe('OllamaContentGenerator', () => {
     it('should return default model when available', async () => {
       const mockResponse = {
         models: [
-          { name: DEFAULT_OLLAMA_MODEL, modified_at: '2023-01-01T00:00:00Z', size: 1000, digest: 'abc123' },
-          { name: 'codellama', modified_at: '2023-01-01T00:00:00Z', size: 2000, digest: 'def456' },
+          {
+            name: DEFAULT_OLLAMA_MODEL,
+            modified_at: '2023-01-01T00:00:00Z',
+            size: 1000,
+            digest: 'abc123',
+          },
+          {
+            name: 'codellama',
+            modified_at: '2023-01-01T00:00:00Z',
+            size: 2000,
+            digest: 'def456',
+          },
         ],
       };
 
@@ -284,8 +307,18 @@ describe('OllamaContentGenerator', () => {
     it('should return first recommended model when default is not available', async () => {
       const mockResponse = {
         models: [
-          { name: 'gemma2:2b', modified_at: '2023-01-01T00:00:00Z', size: 1000, digest: 'abc123' },
-          { name: 'codellama', modified_at: '2023-01-01T00:00:00Z', size: 2000, digest: 'def456' },
+          {
+            name: 'gemma2:2b',
+            modified_at: '2023-01-01T00:00:00Z',
+            size: 1000,
+            digest: 'abc123',
+          },
+          {
+            name: 'codellama',
+            modified_at: '2023-01-01T00:00:00Z',
+            size: 2000,
+            digest: 'def456',
+          },
         ],
       };
 
