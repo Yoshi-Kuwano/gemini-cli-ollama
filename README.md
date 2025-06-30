@@ -139,6 +139,44 @@ ollama list
 ollama show qwen3:1.7b
 ```
 
+### Adding New Models to Recommendations
+
+The CLI automatically detects all installed Ollama models via the `/api/tags` endpoint. However, if you want to add models to the **recommended models list** that appears when Ollama is not available, edit this file:
+
+**File to modify:** `packages/core/src/config/models.ts`
+
+```typescript
+// Add your model to this array
+export const RECOMMENDED_OLLAMA_MODELS = [
+  'qwen3:1.7b',           // Current default
+  'gemma2:2b',
+  'llama3.2:3b', 
+  'phi3:3.8b',
+  'codellama:7b',
+  'mistral:7b',
+  'your-new-model:size',  // ← Add your model here
+] as const;
+```
+
+**To change the default model:**
+
+```typescript
+// Change this line in the same file
+export const DEFAULT_OLLAMA_MODEL = 'your-preferred-model:size';
+```
+
+**After making changes:**
+
+```bash
+# Rebuild the CLI
+npm run build
+
+# The new models will appear in /model selection
+npm start
+```
+
+**Note:** The CLI will show ALL installed models from `ollama list`, regardless of the config file. The `RECOMMENDED_OLLAMA_MODELS` array is only used as a fallback when Ollama is not running.
+
 ## Examples
 
 Once the CLI is running, you can start interacting with AI models from your shell.
