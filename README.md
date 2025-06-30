@@ -1,14 +1,14 @@
-# Gemini CLI
+# Gemini CLI with Ollama Support
 
 [![Gemini CLI CI](https://github.com/google-gemini/gemini-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/google-gemini/gemini-cli/actions/workflows/ci.yml)
 
 ![Gemini CLI Screenshot](./docs/assets/gemini-screenshot.png)
 
-This repository contains the Gemini CLI, a command-line AI workflow tool that connects to your
-tools, understands your code and accelerates your workflows.
+This repository contains the Gemini CLI with enhanced **Ollama support**, a command-line AI workflow tool that connects to your tools, understands your code and accelerates your workflows using both cloud and local AI models.
 
 With the Gemini CLI you can:
 
+- **Run completely offline** with local Ollama models (qwen3:1.7b, gemma2:2b, phi3:3.8b, etc.)
 - Query and edit large codebases in and beyond Gemini's 1M token context window.
 - Generate new apps from PDFs or sketches, using Gemini's multimodal capabilities.
 - Automate operational tasks, like querying pull requests or handling complex rebases.
@@ -16,8 +16,46 @@ With the Gemini CLI you can:
   Veo or Lyria](https://github.com/GoogleCloudPlatform/vertex-ai-creative-studio/tree/main/experiments/mcp-genmedia)
 - Ground your queries with the [Google Search](https://ai.google.dev/gemini-api/docs/grounding)
   tool, built in to Gemini.
+- **Switch between multiple AI providers**: Google Gemini, Vertex AI, and local Ollama models.
 
 ## Quickstart
+
+### Option 1: Local AI with Ollama (Recommended - No API Key Required!)
+
+1. **Prerequisites:** 
+   - Ensure you have [Node.js version 18](https://nodejs.org/en/download) or higher installed
+   - Install [Ollama](https://ollama.ai) from https://ollama.ai
+
+2. **Setup Ollama:**
+   ```bash
+   # Install a lightweight, fast model
+   ollama pull qwen3:1.7b
+   
+   # Or try other excellent models
+   ollama pull gemma2:2b
+   ollama pull phi3:3.8b
+   
+   # Start Ollama service
+   ollama serve
+   ```
+
+3. **Run the CLI:**
+   ```bash
+   # Clone this enhanced version
+   git clone https://github.com/your-repo/gemini-cli-ollama
+   cd gemini-cli-ollama
+   npm install
+   npm run build
+   npm start
+   ```
+
+4. **Authenticate:** When prompted, select **"Ollama (Local)"** - no API key needed!
+
+5. **Select Model:** Use `/model` command to choose from your installed Ollama models
+
+You are now ready to use the Gemini CLI completely offline!
+
+### Option 2: Cloud AI with Google Gemini
 
 1. **Prerequisites:** Ensure you have [Node.js version 18](https://nodejs.org/en/download) or higher installed.
 2. **Run the CLI:** Execute the following command in your terminal:
@@ -51,26 +89,98 @@ If you need to use a specific model or require a higher request capacity, you ca
 
 For other authentication methods, including Google Workspace accounts, see the [authentication](./docs/cli/authentication.md) guide.
 
+## Ollama Features
+
+### Supported Models
+
+This CLI works with any Ollama model, including:
+
+- **qwen3:1.7b** - Fast, lightweight, excellent for general tasks (default)
+- **gemma2:2b** - Google's Gemma model, great balance of speed and capability  
+- **phi3:3.8b** - Microsoft's Phi-3 model, strong reasoning capabilities
+- **llama3.2:3b** - Meta's Llama model, well-rounded performance
+- **codellama:7b** - Specialized for code generation and analysis
+- **mistral:7b** - Excellent instruction following
+
+### Ollama-Specific Commands
+
+- `/model` - Switch between installed Ollama models
+- `/auth` - Change authentication method (switch between Ollama/Gemini/Vertex AI)
+
+### Environment Variables
+
+```bash
+# Optional: Customize Ollama host (default: http://localhost:11434)
+export OLLAMA_HOST=http://localhost:11434
+
+# Optional: Set default model (default: qwen3:1.7b)
+export OLLAMA_MODEL=gemma2:2b
+```
+
+### Model Installation Guide
+
+```bash
+# Install recommended models
+ollama pull qwen3:1.7b      # Lightweight, fast (1.7GB)
+ollama pull gemma2:2b       # Google's efficient model (2GB)  
+ollama pull phi3:3.8b       # Strong reasoning (3.8GB)
+
+# Code-focused models
+ollama pull codellama:7b    # Specialized for programming (7GB)
+
+# Larger, more capable models
+ollama pull llama3.2:8b     # Meta's latest (8GB)
+ollama pull mistral:7b      # Excellent instruction following (7GB)
+
+# List installed models
+ollama list
+
+# Check model info
+ollama show qwen3:1.7b
+```
+
 ## Examples
 
-Once the CLI is running, you can start interacting with Gemini from your shell.
+Once the CLI is running, you can start interacting with AI models from your shell.
+
+### Using Local Ollama Models
 
 You can start a project from a new directory:
 
 ```sh
 cd new-project/
-gemini
-> Write me a Gemini Discord bot that answers questions using a FAQ.md file I will provide
+npm start  # or use the built CLI
+# Select "Ollama (Local)" authentication
+# Use /model to select your preferred model (e.g., qwen3:1.7b)
+> Write me a Discord bot that answers questions using a FAQ.md file I will provide
 ```
 
 Or work with an existing project:
 
 ```sh
-git clone https://github.com/google-gemini/gemini-cli
-cd gemini-cli
-gemini
+git clone https://github.com/your-repo/gemini-cli-ollama
+cd gemini-cli-ollama
+npm start
+# Select "Ollama (Local)" authentication  
 > Give me a summary of all of the changes that went in yesterday
 ```
+
+### Switching Between Models
+
+```sh
+# In the CLI, use slash commands:
+/model                    # Opens model selection dialog
+/auth                     # Switch between Ollama/Gemini/Vertex AI
+/help                     # Show all available commands
+```
+
+### Local Development Benefits
+
+- ✅ **No API costs** - Run unlimited queries locally
+- ✅ **Privacy first** - Your code never leaves your machine  
+- ✅ **Offline capable** - Work without internet connection
+- ✅ **Fast response** - Local models respond instantly
+- ✅ **Multiple models** - Switch between different model strengths
 
 ### Next steps
 
@@ -82,14 +192,46 @@ gemini
 
 ### Troubleshooting
 
+#### Ollama Issues
+
+**Ollama not connecting:**
+```bash
+# Check if Ollama is running
+curl http://localhost:11434/api/tags
+
+# Start Ollama if not running
+ollama serve
+
+# Check installed models
+ollama list
+```
+
+**Model not found:**
+```bash
+# Install the default model
+ollama pull qwen3:1.7b
+
+# Or install your preferred model
+ollama pull gemma2:2b
+```
+
+**Permission issues:**
+```bash
+# On macOS/Linux, you might need to allow Ollama in System Preferences
+# Check Ollama logs: 
+ollama logs
+```
+
+#### General Issues
+
 Head over to the [troubleshooting](docs/troubleshooting.md) guide if you're
-having issues.
+having other issues.
 
 ## Popular tasks
 
 ### Explore a new codebase
 
-Start by `cd`ing into an existing or newly-cloned repository and running `gemini`.
+Start by `cd`ing into an existing or newly-cloned repository and running the CLI. With Ollama, you can explore without any privacy concerns since everything runs locally!
 
 ```text
 > Describe the main pieces of this system's architecture.
@@ -97,6 +239,18 @@ Start by `cd`ing into an existing or newly-cloned repository and running `gemini
 
 ```text
 > What security mechanisms are in place?
+```
+
+### Code analysis with local models
+
+Perfect for sensitive codebases that shouldn't leave your network:
+
+```text
+> Review this code for potential security vulnerabilities
+```
+
+```text
+> Suggest performance optimizations for this function
 ```
 
 ### Work with your existing code
