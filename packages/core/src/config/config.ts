@@ -41,6 +41,8 @@ import {
 import {
   DEFAULT_GEMINI_EMBEDDING_MODEL,
   DEFAULT_GEMINI_FLASH_MODEL,
+  DEFAULT_OLLAMA_EMBEDDING_MODEL,
+  DEFAULT_OLLAMA_MODEL,
 } from './models.js';
 import { ClearcutLogger } from '../telemetry/clearcut-logger/clearcut-logger.js';
 
@@ -173,8 +175,13 @@ export class Config {
 
   constructor(params: ConfigParameters) {
     this.sessionId = params.sessionId;
+    // Use Ollama embedding model if using Ollama auth, otherwise use Gemini
+    const isOllama = process.env.OLLAMA_HOST || process.env.OLLAMA_MODEL;
     this.embeddingModel =
-      params.embeddingModel ?? DEFAULT_GEMINI_EMBEDDING_MODEL;
+      params.embeddingModel ??
+      (isOllama
+        ? DEFAULT_OLLAMA_EMBEDDING_MODEL
+        : DEFAULT_GEMINI_EMBEDDING_MODEL);
     this.sandbox = params.sandbox;
     this.targetDir = path.resolve(params.targetDir);
     this.debugMode = params.debugMode;
@@ -506,4 +513,4 @@ export function createToolRegistry(config: Config): Promise<ToolRegistry> {
 }
 
 // Export model constants for use in CLI
-export { DEFAULT_GEMINI_FLASH_MODEL };
+export { DEFAULT_GEMINI_FLASH_MODEL, DEFAULT_OLLAMA_MODEL };

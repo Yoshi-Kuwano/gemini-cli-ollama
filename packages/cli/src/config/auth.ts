@@ -35,5 +35,11 @@ export const validateAuthMethod = (authMethod: string): string | null => {
     return null;
   }
 
+  if (authMethod === AuthType.USE_OLLAMA) {
+    // Ollama doesn't require any API keys, just check if the host is accessible
+    // The actual availability check will be done when creating the content generator
+    return null;
+  }
+
   return 'Invalid auth method selected.';
 };

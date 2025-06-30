@@ -1,3 +1,21 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Architecture Overview
+
+This is a monorepo for the Gemini CLI tool with two main packages:
+
+- `packages/cli` - User interface using React with Ink for terminal rendering
+- `packages/core` - Core functionality including API client, tools, and business logic
+
+Key architectural patterns:
+
+- Tools extend `BaseTool` class from `packages/core/src/tools/tools.ts`
+- MCP (Model Context Protocol) servers for extensibility
+- Clear separation between UI (cli) and business logic (core)
+- Container-based sandboxing for security
+
 ## Building and running
 
 Before submitting any changes, it is crucial to validate them by running the full preflight check. This command will build the repository, run all tests, check for type errors, and lint the code.
@@ -9,6 +27,39 @@ npm run preflight
 ```
 
 This single command ensures that your changes meet all the quality gates of the project. While you can run the individual steps (`build`, `test`, `typecheck`, `lint`) separately, it is highly recommended to use `npm run preflight` to ensure a comprehensive validation.
+
+### Common Development Commands
+
+```bash
+# Install dependencies
+npm install
+
+# Build all packages
+npm run build
+
+# Build with sandbox (for container-based sandboxing)
+npm run build:all
+
+# Run the CLI from source
+npm start
+
+# Run tests
+npm test                    # Run all unit tests
+npm run test:e2e           # Run integration tests
+npm run test:integration:all # Run all integration test variants
+
+# Linting and formatting
+npm run lint               # Check for linting errors
+npm run lint:fix          # Fix linting errors
+npm run format            # Format code with Prettier
+
+# Type checking
+npm run typecheck         # Run TypeScript type checking
+
+# Debug mode
+npm run debug             # Start with Node debugger
+DEV=true npm start       # Enable React DevTools connection
+```
 
 ## Writing Tests
 
@@ -53,6 +104,40 @@ This project uses **Vitest** as its primary testing framework. When writing test
 
 - When adding tests, first examine existing tests to understand and conform to established conventions.
 - Pay close attention to the mocks at the top of existing test files; they reveal critical dependencies and how they are managed in a test environment.
+
+## Creating New Tools
+
+When adding new tools to the Gemini CLI:
+
+1. **Extend BaseTool**: Create a new class in `packages/core/src/tools/` that extends `BaseTool`
+2. **Implement required methods**:
+   - `validateToolParams()` - Validate input parameters
+   - `getDescription()` - Provide a user-friendly description of what the tool will do
+   - `shouldConfirmExecute()` - Return confirmation details if user approval is needed
+   - `execute()` - Implement the tool's functionality
+
+3. **Register the tool**: Add it to the tool registry in `packages/core/src/tools/tool-registry.ts`
+
+4. **Write tests**: Create a corresponding `.test.ts` file following existing patterns
+
+Example tool structure:
+
+```typescript
+export class MyTool extends BaseTool<MyToolParams, ToolResult> {
+  constructor(rootDir: string, config: Config) {
+    super(
+      'my_tool', // Internal name
+      'My Tool', // Display name
+      'Description of what the tool does',
+      parameterSchema, // JSON Schema for params
+      true, // isOutputMarkdown
+      false, // canUpdateOutput
+    );
+  }
+
+  // Implement required methods...
+}
+```
 
 ## Git Repo
 
