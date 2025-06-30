@@ -18,6 +18,7 @@ import {
   MCPServerStatus,
   getMCPDiscoveryState,
   getMCPServerStatus,
+  AuthType,
 } from '@google/gemini-cli-core';
 import { useSessionStats } from '../contexts/SessionContext.js';
 import {
@@ -72,6 +73,7 @@ export const useSlashCommandProcessor = (
   openThemeDialog: () => void,
   openAuthDialog: () => void,
   openEditorDialog: () => void,
+  openModelDialog: () => void,
   performMemoryRefresh: () => Promise<void>,
   toggleCorgiMode: () => void,
   showToolDescriptions: boolean = false,
@@ -241,6 +243,21 @@ export const useSlashCommandProcessor = (
         description: 'change the theme',
         action: (_mainCommand, _subCommand, _args) => {
           openThemeDialog();
+        },
+      },
+      {
+        name: 'model',
+        description: 'select Ollama model (when using Ollama)',
+        action: (_mainCommand, _subCommand, _args) => {
+          if (settings.merged.selectedAuthType !== AuthType.USE_OLLAMA) {
+            addMessage({
+              type: MessageType.ERROR,
+              content: 'Model selection is only available when using Ollama authentication. Use /auth to switch to Ollama first.',
+              timestamp: new Date(),
+            });
+            return;
+          }
+          openModelDialog();
         },
       },
       {

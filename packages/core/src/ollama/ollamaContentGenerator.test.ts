@@ -10,7 +10,7 @@ import {
   createOllamaContentGenerator,
 } from './ollamaContentGenerator.js';
 import { ContentGeneratorConfig, AuthType } from '../core/contentGenerator.js';
-import { DEFAULT_OLLAMA_MODEL } from '../config/models.js';
+import { DEFAULT_OLLAMA_MODEL, RECOMMENDED_OLLAMA_MODELS } from '../config/models.js';
 
 // Mock fetch globally
 const mockFetch = vi.fn();
@@ -231,6 +231,72 @@ describe('OllamaContentGenerator', () => {
       const result = await generator.listModels();
 
       expect(result).toEqual([]);
+    });
+  });
+
+  describe('getAvailableModels', () => {
+    it('should return installed models when available', async () => {
+      const mockResponse = {
+        models: [
+          { name: 'gemma2:2b', modified_at: '2023-01-01T00:00:00Z', size: 1000, digest: 'abc123' },
+          { name: 'qwen3:1.7b', modified_at: '2023-01-01T00:00:00Z', size: 2000, digest: 'def456' },
+        ],
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockResponse),
+      });
+
+      const result = await generator.getAvailableModels();
+
+      expect(result).toEqual(['gemma2:2b', 'qwen3:1.7b']);
+    });
+
+    it('should return recommended models when Ollama is not available', async () => {
+      mockFetch.mockRejectedValueOnce(new Error('Connection refused'));
+
+      const result = await generator.getAvailableModels();
+
+      expect(result).toEqual([...RECOMMENDED_OLLAMA_MODELS]);
+    });
+  });
+
+  describe('getBestAvailableModel', () => {
+    it('should return default model when available', async () => {
+      const mockResponse = {
+        models: [
+          { name: DEFAULT_OLLAMA_MODEL, modified_at: '2023-01-01T00:00:00Z', size: 1000, digest: 'abc123' },
+          { name: 'codellama', modified_at: '2023-01-01T00:00:00Z', size: 2000, digest: 'def456' },
+        ],
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockResponse),
+      });
+
+      const result = await generator.getBestAvailableModel();
+
+      expect(result).toBe(DEFAULT_OLLAMA_MODEL);
+    });
+
+    it('should return first recommended model when default is not available', async () => {
+      const mockResponse = {
+        models: [
+          { name: 'gemma2:2b', modified_at: '2023-01-01T00:00:00Z', size: 1000, digest: 'abc123' },
+          { name: 'codellama', modified_at: '2023-01-01T00:00:00Z', size: 2000, digest: 'def456' },
+        ],
+      };
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(mockResponse),
+      });
+
+      const result = await generator.getBestAvailableModel();
+
+      expect(result).toBe('gemma2:2b'); // First recommended model found
     });
   });
 });

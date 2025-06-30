@@ -20,7 +20,7 @@ import {
 } from '../core/contentGenerator.js';
 import { reportError } from '../utils/errorReporting.js';
 import { getErrorMessage } from '../utils/errors.js';
-import { DEFAULT_OLLAMA_MODEL } from '../config/models.js';
+import { DEFAULT_OLLAMA_MODEL, RECOMMENDED_OLLAMA_MODELS } from '../config/models.js';
 
 interface OllamaGenerateRequest {
   model: string;
@@ -402,6 +402,37 @@ export class OllamaContentGenerator implements ContentGenerator {
       console.error('Failed to list Ollama models:', error);
       return [];
     }
+  }
+
+  async getAvailableModels(): Promise<string[]> {
+    const installedModels = await this.listModels();
+    
+    // If we can get installed models, return them
+    if (installedModels.length > 0) {
+      return installedModels;
+    }
+    
+    // Fallback to recommended models if Ollama is not available
+    return [...RECOMMENDED_OLLAMA_MODELS];
+  }
+
+  async getBestAvailableModel(): Promise<string> {
+    const availableModels = await this.getAvailableModels();
+    
+    // Try to find the configured default model first
+    if (availableModels.includes(DEFAULT_OLLAMA_MODEL)) {
+      return DEFAULT_OLLAMA_MODEL;
+    }
+    
+    // Try recommended models in order of preference
+    for (const model of RECOMMENDED_OLLAMA_MODELS) {
+      if (availableModels.includes(model)) {
+        return model;
+      }
+    }
+    
+    // Use the first available model
+    return availableModels[0] || DEFAULT_OLLAMA_MODEL;
   }
 
   async isAvailable(): Promise<boolean> {

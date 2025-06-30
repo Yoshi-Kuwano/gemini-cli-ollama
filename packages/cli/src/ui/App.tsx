@@ -23,6 +23,7 @@ import { useLoadingIndicator } from './hooks/useLoadingIndicator.js';
 import { useThemeCommand } from './hooks/useThemeCommand.js';
 import { useAuthCommand } from './hooks/useAuthCommand.js';
 import { useEditorSettings } from './hooks/useEditorSettings.js';
+import { useModelCommand } from './hooks/useModelCommand.js';
 import { useSlashCommandProcessor } from './hooks/slashCommandProcessor.js';
 import { useAutoAcceptIndicator } from './hooks/useAutoAcceptIndicator.js';
 import { useConsoleMessages } from './hooks/useConsoleMessages.js';
@@ -36,6 +37,7 @@ import { ThemeDialog } from './components/ThemeDialog.js';
 import { AuthDialog } from './components/AuthDialog.js';
 import { AuthInProgress } from './components/AuthInProgress.js';
 import { EditorSettingsDialog } from './components/EditorSettingsDialog.js';
+import { OllamaModelSelector } from './components/OllamaModelSelector.js';
 import { Colors } from './colors.js';
 import { Help } from './components/Help.js';
 import { loadHierarchicalGeminiMemory } from '../config/config.js';
@@ -116,6 +118,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
   const [themeError, setThemeError] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [editorError, setEditorError] = useState<string | null>(null);
+  const [modelError, setModelError] = useState<string | null>(null);
   const [footerHeight, setFooterHeight] = useState<number>(0);
   const [corgiMode, setCorgiMode] = useState(false);
   const [currentModel, setCurrentModel] = useState(config.getModel());
@@ -174,6 +177,13 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
     handleEditorSelect,
     exitEditorDialog,
   } = useEditorSettings(settings, setEditorError, addItem);
+
+  const {
+    showModelSelector,
+    openModelDialog,
+    closeModelDialog,
+    handleModelSelect,
+  } = useModelCommand(settings, setModelError, config, addItem);
 
   const toggleCorgiMode = useCallback(() => {
     setCorgiMode((prev) => !prev);
@@ -279,6 +289,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
     openThemeDialog,
     openAuthDialog,
     openEditorDialog,
+    openModelDialog,
     performMemoryRefresh,
     toggleCorgiMode,
     showToolDescriptions,
@@ -475,7 +486,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
     fetchUserMessages();
   }, [history, logger]);
 
-  const isInputActive = streamingState === StreamingState.Idle && !initError;
+  const isInputActive = streamingState === StreamingState.Idle && !initError && !showModelSelector;
 
   const handleClearScreen = useCallback(() => {
     clearItems();
@@ -615,7 +626,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
                 item={{ ...item, id: 0 }}
                 isPending={true}
                 config={config}
-                isFocused={!isEditorDialogOpen}
+                isFocused={!isEditorDialogOpen && !showModelSelector}
               />
             ))}
             <ShowMoreLines constrainHeight={constrainHeight} />
@@ -688,6 +699,19 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
                 onSelect={handleEditorSelect}
                 settings={settings}
                 onExit={exitEditorDialog}
+              />
+            </Box>
+          ) : showModelSelector ? (
+            <Box flexDirection="column">
+              {modelError && (
+                <Box marginBottom={1}>
+                  <Text color={Colors.AccentRed}>{modelError}</Text>
+                </Box>
+              )}
+              <OllamaModelSelector
+                onSelect={handleModelSelect}
+                onCancel={closeModelDialog}
+                ollamaHost={process.env.OLLAMA_HOST}
               />
             </Box>
           ) : showPrivacyNotice ? (
@@ -774,6 +798,7 @@ const App = ({ config, settings, startupWarnings = [] }: AppProps) => {
                   slashCommands={slashCommands}
                   shellModeActive={shellModeActive}
                   setShellModeActive={setShellModeActive}
+                  focus={!isEditorDialogOpen && !showModelSelector}
                 />
               )}
             </>

@@ -55,7 +55,7 @@ export type ContentGeneratorConfig = {
 export async function createContentGeneratorConfig(
   model: string | undefined,
   authType: AuthType | undefined,
-  config?: { getModel?: () => string },
+  config?: { getModel?: () => string; getOllamaModel?: () => string },
 ): Promise<ContentGeneratorConfig> {
   const geminiApiKey = process.env.GEMINI_API_KEY;
   const googleApiKey = process.env.GOOGLE_API_KEY;
@@ -79,9 +79,11 @@ export async function createContentGeneratorConfig(
   // Handle Ollama configuration
   if (authType === AuthType.USE_OLLAMA) {
     contentGeneratorConfig.ollamaHost = ollamaHost;
-    // For Ollama, use the model from env if specified, otherwise use default
+    // For Ollama, priority: settings -> env -> default
     contentGeneratorConfig.model =
-      process.env.OLLAMA_MODEL || DEFAULT_OLLAMA_MODEL;
+      config?.getOllamaModel?.() || 
+      process.env.OLLAMA_MODEL || 
+      DEFAULT_OLLAMA_MODEL;
     return contentGeneratorConfig;
   }
 
