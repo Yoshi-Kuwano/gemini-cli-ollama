@@ -268,6 +268,72 @@ npm start
 /help                     # Show all available commands
 ```
 
+### Switching Authentication Methods
+
+The CLI automatically selects Ollama (Local) if available, but you can easily switch to other AI providers:
+
+#### Using the /auth Command (Recommended)
+
+1. **Start the CLI:**
+   ```bash
+   npm start
+   ```
+
+2. **Switch authentication method:**
+   ```sh
+   # Type this in the CLI
+   /auth
+   ```
+
+3. **Select your preferred provider:**
+   - **Ollama (Local)** - No API key required, runs offline
+   - **Google Personal Account** - Sign in with your Google account (60 requests/min)
+   - **Gemini API Key** - Use your API key for higher limits
+   - **Vertex AI** - For enterprise/Google Cloud users
+
+4. **Follow the authentication flow** for your selected method
+
+#### Pre-configuring Authentication
+
+You can also set your preferred authentication method before starting:
+
+**Option 1: Environment Variables**
+```bash
+# For Gemini API Key
+export GEMINI_API_KEY="your-api-key-here"
+npm start  # Will automatically use Gemini
+
+# For Vertex AI
+export GOOGLE_API_KEY="your-service-account-key"
+export GOOGLE_CLOUD_PROJECT="your-project-id"
+export GOOGLE_CLOUD_LOCATION="us-central1"
+npm start  # Will automatically use Vertex AI
+```
+
+**Option 2: Settings File**
+```json
+{
+  "selectedAuthType": "gemini-api-key"
+}
+```
+
+Available auth types:
+- `"ollama"` - Ollama (Local)
+- `"oauth-personal"` - Google Personal Account
+- `"gemini-api-key"` - Gemini API Key
+- `"vertex-ai"` - Vertex AI
+
+#### Authentication Priority
+
+The CLI automatically selects authentication in this order:
+1. **Settings file** configuration
+2. **Ollama** (if available and models installed)
+3. **Gemini API Key** (if GEMINI_API_KEY is set)
+4. **Vertex AI** (if Google Cloud variables are set)
+5. **Google Personal Account** (default fallback)
+
+**Tip:** Use `/auth` anytime during your session to switch between different AI providers without restarting the CLI!
+
 ### Local Development Benefits
 
 - ✅ **No API costs** - Run unlimited queries locally
