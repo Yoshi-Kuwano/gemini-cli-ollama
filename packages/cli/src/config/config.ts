@@ -28,6 +28,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
 import { loadSandboxConfig } from './sandboxConfig.js';
+import { getProxyForUrl } from '../utils/proxy.js';
 
 // Simple console logger for now - replace with actual logger if available
 const logger = {
@@ -197,6 +198,12 @@ export async function loadCliConfig(
 
   const sandboxConfig = await loadSandboxConfig(settings, argv);
 
+  // Override NO_PROXY environment variable if settings.noProxy is specified
+  if (settings.noProxy) {
+    process.env.NO_PROXY = settings.noProxy;
+    process.env.no_proxy = settings.noProxy;
+  }
+
   return new Config({
     sessionId,
     embeddingModel: DEFAULT_GEMINI_EMBEDDING_MODEL,
@@ -235,11 +242,7 @@ export async function loadCliConfig(
         settings.fileFiltering?.enableRecursiveFileSearch,
     },
     checkpointing: argv.checkpointing || settings.checkpointing?.enabled,
-    proxy:
-      process.env.HTTPS_PROXY ||
-      process.env.https_proxy ||
-      process.env.HTTP_PROXY ||
-      process.env.http_proxy,
+    proxy: getProxyForUrl(settings.ollamaHost),
     cwd: process.cwd(),
     fileDiscoveryService: fileService,
     bugCommand: settings.bugCommand,

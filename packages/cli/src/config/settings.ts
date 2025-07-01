@@ -40,6 +40,9 @@ export interface Settings {
   selectedAuthType?: AuthType;
   ollamaModel?: string;
   ollamaHost?: string;
+  // Comma-separated list of hosts that should not use proxy
+  // Example: "localhost,127.0.0.1,192.168.1.100,.local"
+  noProxy?: string;
   sandbox?: boolean | string;
   coreTools?: string[];
   excludeTools?: string[];
