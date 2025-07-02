@@ -57,9 +57,8 @@ export class ReadFileTool extends BaseTool<ReadFileToolParams, ToolResult> {
         properties: {
           absolute_path: {
             description:
-              "The absolute path to the file to read (e.g., '/home/user/project/file.txt'). Relative paths are not supported. You must provide an absolute path.",
+              "The path to the file to read. Can be absolute (e.g., '/home/user/project/file.txt') or relative to the current working directory (e.g., 'file.txt', 'subdir/file.txt').",
             type: 'string',
-            pattern: '^/',
           },
           offset: {
             description:
@@ -89,9 +88,13 @@ export class ReadFileTool extends BaseTool<ReadFileToolParams, ToolResult> {
     ) {
       return 'Parameters failed schema validation.';
     }
-    const filePath = params.absolute_path;
+    let filePath = params.absolute_path;
+    
+    // Auto-convert relative paths to absolute paths based on root directory
     if (!path.isAbsolute(filePath)) {
-      return `File path must be absolute, but was relative: ${filePath}. You must provide an absolute path.`;
+      filePath = path.resolve(this.rootDirectory, filePath);
+      // Update the params to use the absolute path
+      params.absolute_path = filePath;
     }
     if (!isWithinRoot(filePath, this.rootDirectory)) {
       return `File path must be within the root directory (${this.rootDirectory}): ${filePath}`;

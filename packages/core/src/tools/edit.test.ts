@@ -198,15 +198,15 @@ describe('EditTool', () => {
       expect(tool.validateToolParams(params)).toBeNull();
     });
 
-    it('should return error for relative path', () => {
+    it('should auto-convert relative path to absolute', () => {
       const params: EditToolParams = {
         file_path: 'test.txt',
         old_string: 'old',
         new_string: 'new',
       };
-      expect(tool.validateToolParams(params)).toMatch(
-        /File path must be absolute/,
-      );
+      expect(tool.validateToolParams(params)).toBeNull();
+      // Should have converted the relative path to absolute
+      expect(params.file_path).toBe(path.join(rootDir, 'test.txt'));
     });
 
     it('should return error for path outside root', () => {
@@ -398,15 +398,16 @@ describe('EditTool', () => {
       });
     });
 
-    it('should return error if params are invalid', async () => {
+    it('should return error if params are invalid (outside root)', async () => {
+      const outsidePath = path.join(tempDir, 'outside-root.txt');
       const params: EditToolParams = {
-        file_path: 'relative.txt',
+        file_path: outsidePath,
         old_string: 'old',
         new_string: 'new',
       };
       const result = await tool.execute(params, new AbortController().signal);
       expect(result.llmContent).toMatch(/Error: Invalid parameters provided/);
-      expect(result.returnDisplay).toMatch(/Error: File path must be absolute/);
+      expect(result.returnDisplay).toMatch(/File path must be within the root directory/);
     });
 
     it('should edit an existing file and return diff with fileName', async () => {

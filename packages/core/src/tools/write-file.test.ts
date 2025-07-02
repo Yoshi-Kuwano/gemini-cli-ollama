@@ -163,11 +163,11 @@ describe('WriteFileTool', () => {
       expect(tool.validateToolParams(params)).toBeNull();
     });
 
-    it('should return error for relative path', () => {
+    it('should auto-convert relative path to absolute', () => {
       const params = { file_path: 'test.txt', content: 'hello' };
-      expect(tool.validateToolParams(params)).toMatch(
-        /File path must be absolute/,
-      );
+      expect(tool.validateToolParams(params)).toBeNull();
+      // Should have converted the relative path to absolute
+      expect(params.file_path).toBe(path.join(rootDir, 'test.txt'));
     });
 
     it('should return error for path outside root', () => {
@@ -301,10 +301,11 @@ describe('WriteFileTool', () => {
 
   describe('shouldConfirmExecute', () => {
     const abortSignal = new AbortController().signal;
-    it('should return false if params are invalid (relative path)', async () => {
+    it('should handle relative path by converting to absolute', async () => {
       const params = { file_path: 'relative.txt', content: 'test' };
       const confirmation = await tool.shouldConfirmExecute(params, abortSignal);
-      expect(confirmation).toBe(false);
+      expect(confirmation).not.toBe(false);
+      expect(typeof confirmation === 'object' && confirmation.type).toBe('edit');
     });
 
     it('should return false if params are invalid (outside root)', async () => {
@@ -412,11 +413,13 @@ describe('WriteFileTool', () => {
 
   describe('execute', () => {
     const abortSignal = new AbortController().signal;
-    it('should return error if params are invalid (relative path)', async () => {
+    it('should handle relative path by converting to absolute', async () => {
       const params = { file_path: 'relative.txt', content: 'test' };
       const result = await tool.execute(params, abortSignal);
-      expect(result.llmContent).toMatch(/Error: Invalid parameters provided/);
-      expect(result.returnDisplay).toMatch(/Error: File path must be absolute/);
+      expect(result.llmContent).toMatch(/Successfully created and wrote to new file/);
+      // Check that the file was created at the correct absolute path
+      const expectedPath = path.join(rootDir, 'relative.txt');
+      expect(fs.existsSync(expectedPath)).toBe(true);
     });
 
     it('should return error if params are invalid (path outside root)', async () => {

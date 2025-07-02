@@ -158,6 +158,7 @@ export OLLAMA_MODEL=gemma2:2b
 #### Configuration Priority
 
 The CLI uses this priority order:
+
 1. **Settings file** (highest priority)
 2. **Environment variables**
 3. **Default values** (http://localhost:11434, qwen3:1.7b)
@@ -275,11 +276,13 @@ The CLI automatically selects Ollama (Local) if available, but you can easily sw
 #### Using the /auth Command (Recommended)
 
 1. **Start the CLI:**
+
    ```bash
    npm start
    ```
 
 2. **Switch authentication method:**
+
    ```sh
    # Type this in the CLI
    /auth
@@ -298,6 +301,7 @@ The CLI automatically selects Ollama (Local) if available, but you can easily sw
 You can also set your preferred authentication method before starting:
 
 **Option 1: Environment Variables**
+
 ```bash
 # For Gemini API Key
 export GEMINI_API_KEY="your-api-key-here"
@@ -311,6 +315,7 @@ npm start  # Will automatically use Vertex AI
 ```
 
 **Option 2: Settings File**
+
 ```json
 {
   "selectedAuthType": "gemini-api-key"
@@ -318,6 +323,7 @@ npm start  # Will automatically use Vertex AI
 ```
 
 Available auth types:
+
 - `"ollama"` - Ollama (Local)
 - `"oauth-personal"` - Google Personal Account
 - `"gemini-api-key"` - Gemini API Key
@@ -326,6 +332,7 @@ Available auth types:
 #### Authentication Priority
 
 The CLI automatically selects authentication in this order:
+
 1. **Settings file** configuration
 2. **Ollama** (if available and models installed)
 3. **Gemini API Key** (if GEMINI_API_KEY is set)

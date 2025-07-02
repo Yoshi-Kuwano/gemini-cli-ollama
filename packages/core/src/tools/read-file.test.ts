@@ -71,11 +71,11 @@ describe('ReadFileTool', () => {
       expect(tool.validateToolParams(params)).toBeNull();
     });
 
-    it('should return error for relative path', () => {
+    it('should auto-convert relative path to absolute', () => {
       const params: ReadFileToolParams = { absolute_path: 'test.txt' };
-      expect(tool.validateToolParams(params)).toMatch(
-        /File path must be absolute/,
-      );
+      expect(tool.validateToolParams(params)).toBeNull();
+      // Should have converted the relative path to absolute
+      expect(params.absolute_path).toBe(path.join(tempRootDir, 'test.txt'));
     });
 
     it('should return error for path outside root', () => {
@@ -140,11 +140,12 @@ describe('ReadFileTool', () => {
   });
 
   describe('execute', () => {
-    it('should return validation error if params are invalid', async () => {
-      const params: ReadFileToolParams = { absolute_path: 'relative/path.txt' };
+    it('should return validation error if params are invalid (outside root)', async () => {
+      const outsidePath = path.resolve(os.tmpdir(), 'outside-root.txt');
+      const params: ReadFileToolParams = { absolute_path: outsidePath };
       const result = await tool.execute(params, abortSignal);
       expect(result.llmContent).toMatch(/Error: Invalid parameters provided/);
-      expect(result.returnDisplay).toMatch(/File path must be absolute/);
+      expect(result.returnDisplay).toMatch(/File path must be within the root directory/);
     });
 
     it('should return error from processSingleFileContent if it fails', async () => {

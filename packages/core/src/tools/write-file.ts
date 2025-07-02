@@ -80,7 +80,7 @@ export class WriteFileTool
         properties: {
           file_path: {
             description:
-              "The absolute path to the file to write to (e.g., '/home/user/project/file.txt'). Relative paths are not supported.",
+              "The path to the file to write to. Can be absolute (e.g., '/home/user/project/file.txt') or relative to the current working directory (e.g., 'file.txt', 'subdir/file.txt').",
             type: 'string',
           },
           content: {
@@ -118,9 +118,14 @@ export class WriteFileTool
     ) {
       return 'Parameters failed schema validation.';
     }
-    const filePath = params.file_path;
+    let filePath = params.file_path;
+    
+    // Auto-convert relative paths to absolute paths based on target directory
     if (!path.isAbsolute(filePath)) {
-      return `File path must be absolute: ${filePath}`;
+      const targetDir = this.config.getTargetDir();
+      filePath = path.resolve(targetDir, filePath);
+      // Update the params to use the absolute path
+      params.file_path = filePath;
     }
     if (!this.isWithinRoot(filePath)) {
       return `File path must be within the root directory (${this.config.getTargetDir()}): ${filePath}`;

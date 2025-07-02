@@ -33,7 +33,7 @@ export function getProxyForUrl(url?: string): string | undefined {
   }
 
   // Check if hostname matches any no_proxy patterns
-  const noProxyList = noProxy.split(',').map(item => item.trim());
+  const noProxyList = noProxy.split(',').map((item) => item.trim());
   for (const pattern of noProxyList) {
     if (!pattern) continue;
 
@@ -48,13 +48,20 @@ export function getProxyForUrl(url?: string): string | undefined {
     }
 
     // Check for domain match without leading dot
-    if (!pattern.includes('/') && hostname === pattern || hostname.endsWith('.' + pattern)) {
+    if (
+      (!pattern.includes('/') && hostname === pattern) ||
+      hostname.endsWith('.' + pattern)
+    ) {
       return undefined;
     }
 
     // Check for localhost variations
-    if (pattern.toLowerCase() === 'localhost' && 
-        (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '::1')) {
+    if (
+      pattern.toLowerCase() === 'localhost' &&
+      (hostname === 'localhost' ||
+        hostname === '127.0.0.1' ||
+        hostname === '::1')
+    ) {
       return undefined;
     }
 

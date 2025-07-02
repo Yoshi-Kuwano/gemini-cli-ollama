@@ -89,7 +89,7 @@ export class EditTool
       The user has the ability to modify the \`new_string\` content. If modified, this will be stated in the response.
 
 Expectation for required parameters:
-1. \`file_path\` MUST be an absolute path; otherwise an error will be thrown.
+1. \`file_path\` can be an absolute path or relative to the current working directory.
 2. \`old_string\` MUST be the exact literal text to replace (including all whitespace, indentation, newlines, and surrounding code etc.).
 3. \`new_string\` MUST be the exact literal text to replace \`old_string\` with (also including all whitespace, indentation, newlines, and surrounding code etc.). Ensure the resulting code is correct and idiomatic.
 4. NEVER escape \`old_string\` or \`new_string\`, that would break the exact literal text requirement.
@@ -99,7 +99,7 @@ Expectation for required parameters:
         properties: {
           file_path: {
             description:
-              "The absolute path to the file to modify. Must start with '/'.",
+              "The path to the file to modify. Can be absolute (e.g., '/home/user/project/file.txt') or relative to the current working directory (e.g., 'file.txt', 'subdir/file.txt').",
             type: 'string',
           },
           old_string: {
@@ -161,8 +161,9 @@ Expectation for required parameters:
       return 'Parameters failed schema validation.';
     }
 
+    // Auto-convert relative paths to absolute paths based on root directory
     if (!path.isAbsolute(params.file_path)) {
-      return `File path must be absolute: ${params.file_path}`;
+      params.file_path = path.resolve(this.rootDirectory, params.file_path);
     }
 
     if (!this.isWithinRoot(params.file_path)) {

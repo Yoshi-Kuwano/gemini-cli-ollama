@@ -13,6 +13,8 @@ import {
   GenerateContentResponse,
   Part,
   FinishReason,
+  FunctionCall,
+  ToolListUnion,
 } from '@google/genai';
 import {
   ContentGenerator,
@@ -43,6 +45,56 @@ interface OllamaGenerateResponse {
   response: string;
   done: boolean;
   context?: number[];
+  total_duration?: number;
+  load_duration?: number;
+  prompt_eval_count?: number;
+  prompt_eval_duration?: number;
+  eval_count?: number;
+  eval_duration?: number;
+}
+
+interface OllamaChatRequest {
+  model: string;
+  messages: OllamaMessage[];
+  tools?: OllamaTool[];
+  stream?: boolean;
+  options?: {
+    temperature?: number;
+    top_p?: number;
+    num_predict?: number;
+  };
+}
+
+interface OllamaMessage {
+  role: 'system' | 'user' | 'assistant' | 'tool';
+  content: string;
+  tool_calls?: OllamaToolCall[];
+}
+
+interface OllamaTool {
+  type: 'function';
+  function: {
+    name: string;
+    description: string;
+    parameters: Record<string, unknown>;
+  };
+}
+
+interface OllamaToolCall {
+  id?: string;
+  type?: 'function';
+  function: {
+    name: string;
+    arguments: string | Record<string, unknown>;
+  };
+}
+
+interface OllamaChatResponse {
+  model: string;
+  created_at: string;
+  message: OllamaMessage;
+  done: boolean;
+  done_reason?: string;
   total_duration?: number;
   load_duration?: number;
   prompt_eval_count?: number;
@@ -85,57 +137,15 @@ export class OllamaContentGenerator implements ContentGenerator {
     request: GenerateContentParameters,
   ): Promise<GenerateContentResponse> {
     try {
-      const { prompt, systemInstruction } = this.convertToOllamaFormat(request);
+      // Check if tools are provided - use chat endpoint for tool support
+      const hasTools = request.config?.tools && request.config.tools.length > 0;
 
-      const ollamaRequest: OllamaGenerateRequest = {
-        model: request.model || this.model,
-        prompt,
-        system: systemInstruction,
-        stream: false,
-        options: {
-          temperature: request.config?.temperature,
-          top_p: request.config?.topP,
-          num_predict: request.config?.maxOutputTokens,
-        },
-      };
-
-      const httpResponse = await fetch(`${this.ollamaHost}/api/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(ollamaRequest),
-        signal: request.config?.abortSignal,
-      });
-
-      if (!httpResponse.ok) {
-        throw new Error(
-          `Ollama API error: ${httpResponse.status} ${httpResponse.statusText}`,
-        );
+      if (hasTools) {
+        return await this.generateContentWithChat(request);
+      } else {
+        // Fallback to generate endpoint for non-tool requests
+        return await this.generateContentWithGenerate(request);
       }
-
-      const ollamaResponse: OllamaGenerateResponse = await httpResponse.json();
-
-      // Convert Ollama response to Gemini format
-      const response = new GenerateContentResponse();
-      response.candidates = [
-        {
-          content: {
-            role: 'model',
-            parts: [{ text: ollamaResponse.response }],
-          },
-          finishReason: ollamaResponse.done
-            ? FinishReason.STOP
-            : FinishReason.MAX_TOKENS,
-          index: 0,
-        },
-      ];
-      response.usageMetadata = {
-        promptTokenCount: ollamaResponse.prompt_eval_count,
-        candidatesTokenCount: ollamaResponse.eval_count,
-        totalTokenCount:
-          (ollamaResponse.prompt_eval_count || 0) +
-          (ollamaResponse.eval_count || 0),
-      };
-      return response;
     } catch (error) {
       await reportError(
         error,
@@ -149,10 +159,109 @@ export class OllamaContentGenerator implements ContentGenerator {
     }
   }
 
+  private async generateContentWithGenerate(
+    request: GenerateContentParameters,
+  ): Promise<GenerateContentResponse> {
+    const { prompt, systemInstruction } = this.convertToOllamaFormat(request);
+
+    const ollamaRequest: OllamaGenerateRequest = {
+      model: request.model || this.model,
+      prompt,
+      system: systemInstruction,
+      stream: false,
+      options: {
+        temperature: request.config?.temperature,
+        top_p: request.config?.topP,
+        num_predict: request.config?.maxOutputTokens,
+      },
+    };
+
+    const httpResponse = await fetch(`${this.ollamaHost}/api/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(ollamaRequest),
+      signal: request.config?.abortSignal,
+    });
+
+    if (!httpResponse.ok) {
+      throw new Error(
+        `Ollama API error: ${httpResponse.status} ${httpResponse.statusText}`,
+      );
+    }
+
+    const ollamaResponse: OllamaGenerateResponse = await httpResponse.json();
+
+    // Convert Ollama response to Gemini format
+    const response = new GenerateContentResponse();
+    response.candidates = [
+      {
+        content: {
+          role: 'model',
+          parts: [{ text: ollamaResponse.response }],
+        },
+        finishReason: ollamaResponse.done
+          ? FinishReason.STOP
+          : FinishReason.MAX_TOKENS,
+        index: 0,
+      },
+    ];
+    response.usageMetadata = {
+      promptTokenCount: ollamaResponse.prompt_eval_count,
+      candidatesTokenCount: ollamaResponse.eval_count,
+      totalTokenCount:
+        (ollamaResponse.prompt_eval_count || 0) +
+        (ollamaResponse.eval_count || 0),
+    };
+    return response;
+  }
+
+  private async generateContentWithChat(
+    request: GenerateContentParameters,
+  ): Promise<GenerateContentResponse> {
+    const { messages, tools } = this.convertToChatFormat(request);
+
+    const ollamaRequest: OllamaChatRequest = {
+      model: request.model || this.model,
+      messages,
+      tools,
+      stream: false,
+      options: {
+        temperature: request.config?.temperature,
+        top_p: request.config?.topP,
+        num_predict: request.config?.maxOutputTokens,
+      },
+    };
+
+    const httpResponse = await fetch(`${this.ollamaHost}/api/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(ollamaRequest),
+      signal: request.config?.abortSignal,
+    });
+
+    if (!httpResponse.ok) {
+      throw new Error(
+        `Ollama API error: ${httpResponse.status} ${httpResponse.statusText}`,
+      );
+    }
+
+    const ollamaResponse: OllamaChatResponse = await httpResponse.json();
+
+    // Convert Ollama response to Gemini format
+    return this.convertChatResponseToGemini(ollamaResponse);
+  }
+
   async generateContentStream(
     request: GenerateContentParameters,
   ): Promise<AsyncGenerator<GenerateContentResponse>> {
-    return this.doGenerateContentStream(request);
+    // Check if tools are provided - use chat endpoint for tool support
+    const hasTools = request.config?.tools && request.config.tools.length > 0;
+
+    if (hasTools) {
+      return await this.doGenerateContentStreamChat(request);
+    } else {
+      return await this.doGenerateContentStream(request);
+    }
   }
 
   private async *doGenerateContentStream(
@@ -241,6 +350,77 @@ export class OllamaContentGenerator implements ContentGenerator {
       );
       throw new Error(
         `Failed to stream content with Ollama: ${getErrorMessage(error)}`,
+      );
+    }
+  }
+
+  private async *doGenerateContentStreamChat(
+    request: GenerateContentParameters,
+  ): AsyncGenerator<GenerateContentResponse> {
+    try {
+      const { messages, tools } = this.convertToChatFormat(request);
+
+      const ollamaRequest: OllamaChatRequest = {
+        model: request.model || this.model,
+        messages,
+        tools,
+        stream: true,
+        options: {
+          temperature: request.config?.temperature,
+          top_p: request.config?.topP,
+          num_predict: request.config?.maxOutputTokens,
+        },
+      };
+
+      const httpResponse = await fetch(`${this.ollamaHost}/api/chat`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(ollamaRequest),
+        signal: request.config?.abortSignal,
+      });
+
+      if (!httpResponse.ok) {
+        throw new Error(
+          `Ollama API error: ${httpResponse.status} ${httpResponse.statusText}`,
+        );
+      }
+
+      const reader = httpResponse.body?.getReader();
+      if (!reader) {
+        throw new Error('No response body from Ollama');
+      }
+
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          if (line.trim()) {
+            try {
+              const chunk: OllamaChatResponse = JSON.parse(line);
+              yield this.convertChatResponseToGemini(chunk);
+            } catch (e) {
+              console.error('Failed to parse Ollama chat stream chunk:', e);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      await reportError(
+        error,
+        'Error streaming chat content with Ollama',
+        Array.isArray(request.contents) ? request.contents : [request.contents],
+        'ollama-chat-stream',
+      );
+      throw new Error(
+        `Failed to stream chat content with Ollama: ${getErrorMessage(error)}`,
       );
     }
   }
@@ -381,6 +561,151 @@ export class OllamaContentGenerator implements ContentGenerator {
     return { prompt: prompt.trim(), systemInstruction };
   }
 
+  private convertToChatFormat(request: GenerateContentParameters): {
+    messages: OllamaMessage[];
+    tools?: OllamaTool[];
+  } {
+    const messages: OllamaMessage[] = [];
+
+    // Handle system instruction
+    if (request.config?.systemInstruction) {
+      let systemText = '';
+      if (typeof request.config.systemInstruction === 'string') {
+        systemText = request.config.systemInstruction;
+      } else if (
+        request.config.systemInstruction &&
+        typeof request.config.systemInstruction === 'object' &&
+        'parts' in request.config.systemInstruction &&
+        request.config.systemInstruction.parts
+      ) {
+        systemText = this.extractTextFromParts(
+          request.config.systemInstruction.parts,
+        );
+      }
+      if (systemText) {
+        messages.push({ role: 'system', content: systemText });
+      }
+    }
+
+    // Convert contents to messages
+    const contents = Array.isArray(request.contents)
+      ? request.contents
+      : [request.contents];
+
+    for (const content of contents) {
+      if (typeof content === 'string') {
+        messages.push({ role: 'user', content });
+      } else if (
+        content &&
+        typeof content === 'object' &&
+        'role' in content &&
+        'parts' in content &&
+        content.parts
+      ) {
+        const role = content.role === 'model' ? 'assistant' : content.role;
+        const messageContent = this.extractTextFromParts(content.parts);
+        const functionResponses = this.extractFunctionResponses(content.parts);
+
+        if (functionResponses.length > 0) {
+          // Handle function responses
+          for (const response of functionResponses) {
+            messages.push({
+              role: 'tool',
+              content:
+                typeof response.response === 'string'
+                  ? response.response
+                  : JSON.stringify(response.response),
+            });
+          }
+        } else if (messageContent) {
+          messages.push({
+            role: role as 'user' | 'assistant',
+            content: messageContent,
+          });
+        }
+      }
+    }
+
+    // Convert tools
+    let tools: OllamaTool[] | undefined;
+    if (request.config?.tools) {
+      tools = this.convertToolsToOllamaFormat(request.config.tools);
+    }
+
+    return { messages, tools };
+  }
+
+  private convertToolsToOllamaFormat(geminiTools: ToolListUnion): OllamaTool[] {
+    const ollamaTools: OllamaTool[] = [];
+
+    for (const tool of geminiTools) {
+      if ('functionDeclarations' in tool && tool.functionDeclarations) {
+        for (const func of tool.functionDeclarations) {
+          if (func.name) {
+            ollamaTools.push({
+              type: 'function',
+              function: {
+                name: func.name,
+                description: func.description || '',
+                parameters: (func.parameters as Record<string, unknown>) || {},
+              },
+            });
+          }
+        }
+      }
+    }
+
+    return ollamaTools;
+  }
+
+  private convertChatResponseToGemini(
+    response: OllamaChatResponse,
+  ): GenerateContentResponse {
+    const geminiResponse = new GenerateContentResponse();
+    const parts: Part[] = [];
+
+    // Handle text content
+    if (response.message.content) {
+      parts.push({ text: response.message.content });
+    }
+
+    // Handle tool calls
+    if (response.message.tool_calls && response.message.tool_calls.length > 0) {
+      for (const toolCall of response.message.tool_calls) {
+        const functionCall: FunctionCall = {
+          name: toolCall.function.name,
+          args:
+            typeof toolCall.function.arguments === 'string'
+              ? JSON.parse(toolCall.function.arguments)
+              : toolCall.function.arguments,
+        };
+        parts.push({ functionCall });
+      }
+    }
+
+    geminiResponse.candidates = [
+      {
+        content: {
+          role: 'model',
+          parts,
+        },
+        finishReason: response.done ? FinishReason.STOP : undefined,
+        index: 0,
+      },
+    ];
+
+    if (response.done) {
+      geminiResponse.usageMetadata = {
+        promptTokenCount: response.prompt_eval_count,
+        candidatesTokenCount: response.eval_count,
+        totalTokenCount:
+          (response.prompt_eval_count || 0) + (response.eval_count || 0),
+      };
+    }
+
+    return geminiResponse;
+  }
+
   private extractTextFromParts(parts: Part[]): string {
     return parts
       .map((part) => {
@@ -391,6 +716,21 @@ export class OllamaContentGenerator implements ContentGenerator {
         return '';
       })
       .join('');
+  }
+
+  private extractFunctionResponses(parts: Part[]): Array<{
+    name: string;
+    response: unknown;
+  }> {
+    return parts
+      .filter((part) => 'functionResponse' in part && part.functionResponse)
+      .map((part) => ({
+        name: part.functionResponse!.name || '',
+        response:
+          part.functionResponse!.response?.output ||
+          part.functionResponse!.response ||
+          {},
+      }));
   }
 
   async listModels(): Promise<string[]> {
